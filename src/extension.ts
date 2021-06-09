@@ -31,10 +31,13 @@ export function activate(context: vscode.ExtensionContext) {
 
         query = query.replace(/(\$[0-9]+)/g, "<#$1#>");
 
+        console.log(params);
+
         for (let i = 0; i < params.length; i++) {
+          const [formatedValue, withEscape] = formater(params[i]);
           query = query.replace(
             RegExp(`<#\\\$(${i + 1})#>`, "g"),
-            ` '${params[i]}' `
+            ` ${withEscape ? "'" + formatedValue + "'" : formatedValue}`
           );
         }
 
@@ -50,5 +53,29 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(disposable);
 }
+
+const formater = (value: unknown) => {
+  if (Array.isArray(value)) {
+    return [JSON.stringify(value), true];
+  }
+
+  if (typeof value === "object") {
+    return [JSON.stringify(value), true];
+  }
+
+  if (
+    typeof value === "string" &&
+    !isNaN(value as any) &&
+    !isNaN(parseFloat(value as any))
+  ) {
+    return [parseFloat(value as any), false];
+  }
+
+  if (typeof value === "number") {
+    return [value, false];
+  }
+
+  return [value, true];
+};
 
 export function deactivate() {}
